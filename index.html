@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AgroCasanare · Plataforma agropecuaria offline-first</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f3f6f1;--card:#fff;--tx:#1d2b1f;--mut:#5d6b60;--bd:#d9e1d6;--pri:#2e7d32;--pri2:#e3f1e2;--warn:#b45309;--warn2:#fdecd2;--bad:#b3261e;--ok:#1b7a3a;--blue:#1d5f8a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121a14;--card:#1a251c;--tx:#e6efe7;--mut:#9db0a0;--bd:#2b3a2e;--pri:#66bb6a;--pri2:#223a25;--warn:#f4b45f;--warn2:#3a2c14;--bad:#f2867f;--ok:#6fd08c;--blue:#7cc0ea}}
+:root[data-theme="dark"]{--bg:#121a14;--card:#1a251c;--tx:#e6efe7;--mut:#9db0a0;--bd:#2b3a2e;--pri:#66bb6a;--pri2:#223a25;--warn:#f4b45f;--warn2:#3a2c14;--bad:#f2867f;--ok:#6fd08c;--blue:#7cc0ea}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.app{max-width:520px;margin:0 auto;min-height:100vh;padding:0 12px 90px}
+header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:12px 0 8px;z-index:5}
+h1{font-size:18px;margin:0 0 8px}
+.bar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid var(--bd);background:var(--card)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--ok)}
+.off .dot{background:var(--bad)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--bd);background:var(--card);border-radius:10px;padding:9px 12px;font-weight:600}
+button.p{background:var(--pri);border-color:var(--pri);color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:10px 0}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--bd);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:6}
+nav div{display:flex;max-width:520px;width:100%}
+nav button{flex:1;border:0;border-radius:0;background:none;font-size:12px;padding:10px 2px;color:var(--mut)}
+nav button.on{color:var(--pri);box-shadow:inset 0 3px 0 var(--pri)}
+nav b{display:block;font-size:18px}
+.item{display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.item:last-child{border:0}
+.tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--pri2);color:var(--pri);white-space:nowrap}
+.tag.w{background:var(--warn2);color:var(--warn)}
+.mut{color:var(--mut);font-size:13px}
+.err{color:var(--bad);font-size:13px;margin-top:8px;min-height:18px}
+.kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi .card{margin:0}.kpi b{font-size:20px;display:block}
+.bw{height:10px;background:var(--pri2);border-radius:6px;overflow:hidden;margin:4px 0 10px}
+.bw i{display:block;height:100%;background:var(--pri)}
+.log{font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;max-height:200px;overflow:auto}
+.toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:14px;z-index:9;max-width:90%}
+section[hidden]{display:none}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<header>
+  <h1>🌾 AgroCasanare <span class="mut" style="font-weight:400">· registro de campo</span></h1>
+  <div class="bar">
+    <span class="chip" id="chip"><span class="dot"></span><span id="chipTx">En línea</span></span>
+    <button id="tog">Simular sin señal</button>
+  </div>
+</header>
+
+<section id="t-reg">
+  <div class="card">
+    <b>Registrar actividad</b>
+    <p class="mut" style="margin:4px 0 0">Se guarda primero en el dispositivo; si no hay señal queda en la cola.</p>
+    <label>Tipo de actividad</label>
+    <select id="tipo"><option>Siembra</option><option>Insumo</option><option>Costo</option><option>Cosecha</option></select>
+    <div class="row">
+      <div><label>Cultivo / rubro</label><select id="cult"><option>Arroz</option><option>Maíz</option><option>Plátano</option><option>Yuca</option><option>Palma de aceite</option><option>Ganadería</option></select></div>
+      <div><label>Lote / finca</label><input id="lote" placeholder="Ej. Lote 3"></div>
+    </div>
+    <div class="row">
+      <div><label>Fecha</label><input id="fecha" type="date"></div>
+      <div><label id="lq">Cantidad</label><input id="cant" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></div>
+    </div>
+    <label>Valor / costo (COP)</label>
+    <input id="valor" type="number" min="0" step="any" inputmode="numeric" placeholder="0">
+    <label>Observaciones</label>
+    <textarea id="nota" rows="2"></textarea>
+    <div class="err" id="err"></div>
+    <button class="p" id="guardar" style="width:100%">Guardar registro</button>
+  </div>
+  <div class="card"><b>Mis registros</b> <span class="mut" id="cnt"></span><div id="lista"></div></div>
+</section>
+
+<section id="t-cola" hidden>
+  <div class="card">
+    <b>Cola de cambios pendientes</b>
+    <p class="mut" style="margin:4px 0 8px">Estructura FIFO: el primer registro guardado es el primero en sincronizarse.</p>
+    <button class="p" id="sync" style="width:100%">Sincronizar ahora</button>
+    <div id="cola" style="margin-top:8px"></div>
+  </div>
+  <div class="card"><b>Bitácora de sincronización</b><div class="log" id="log"></div></div>
+</section>
+
+<section id="t-srv" hidden>
+  <div class="card">
+    <b>Base de datos central (simulada)</b>
+    <p class="mut" style="margin:4px 0 8px">Representa el servidor con API REST y PostgreSQL/MySQL. Solo recibe registros cuando hay conexión.</p>
+    <div id="srv"></div>
+  </div>
+</section>
+
+<section id="t-ind" hidden>
+  <div class="kpi" id="kpi"></div>
+  <div class="card"><b>Costos por cultivo</b><div id="bars" style="margin-top:8px"></div></div>
+  <div class="card"><b>Producción por cultivo</b><div id="bars2" style="margin-top:8px"></div></div>
+</section>
+
+<section id="t-arq" hidden>
+  <div class="card"><b>Arquitectura del prototipo</b>
+    <div class="item"><span><b>Presentación</b><br><span class="mut">Interfaz web adaptable (PWA), formularios táctiles</span></span><span class="tag">UI/UX</span></div>
+    <div class="item"><span><b>Lógica y control</b><br><span class="mut">Motor de reglas: valida fecha, cantidad y valores</span></span><span class="tag">JS</span></div>
+    <div class="item"><span><b>Almacenamiento local</b><br><span class="mut">Base local en el navegador y cola FIFO de cambios</span></span><span class="tag">Local</span></div>
+    <div class="item"><span><b>Comunicaciones</b><br><span class="mut">Detector de conectividad (ON/OFF) y sincronización</span></span><span class="tag">Red</span></div>
+    <div class="item"><span><b>Servidor y persistencia</b><br><span class="mut">BD central simulada y resolución de conflictos</span></span><span class="tag">Remoto</span></div>
+  </div>
+  <div class="card"><b>Datos de prueba</b>
+    <div style="display:flex;gap:8px;margin-top:8px"><button id="demo" style="flex:1">Cargar ejemplos</button><button id="reset" style="flex:1">Borrar todo</button></div>
+  </div>
+</section>
+</div>
+
+<nav><div id="nav">
+  <button data-t="reg" class="on"><b>📝</b>Registrar</button>
+  <button data-t="cola"><b>🔄</b>Cola <span id="nq"></span></button>
+  <button data-t="srv"><b>🗄️</b>Servidor</button>
+  <button data-t="ind"><b>📊</b>Indicadores</button>
+  <button data-t="arq"><b>🧩</b>Capas</button>
+</div></nav>
+
+<script>
+(function(){
+var KEY="agro_offline_v1", db={local:[],queue:[],server:[],log:[]}, online=true, syncing=false;
+function $(i){return document.getElementById(i)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function load(){try{var s=localStorage.getItem(KEY);if(s)db=JSON.parse(s)}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}}
+function cop(n){return "$"+Math.round(n).toLocaleString("es-CO")}
+function hoy(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function hora(){return new Date().toLocaleTimeString("es-CO")}
+function toast(m){var t=document.createElement("div");t.className="toast";t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove()},2400)}
+function log(m){db.log.unshift("["+hora()+"] "+m);db.log=db.log.slice(0,60);save()}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
+var UN={Siembra:"Área (ha)",Insumo:"Cantidad (kg/L)",Costo:"Cantidad (unidades)",Cosecha:"Producción (kg)"};
+
+// Motor de reglas: validación de datos
+function validar(r){
+  if(!r.lote.trim())return "Escribe el lote o la finca.";
+  if(!r.fecha)return "Selecciona la fecha.";
+  if(r.fecha>hoy())return "La fecha no puede ser futura.";
+  if(!(r.cant>0))return "La cantidad debe ser mayor que cero.";
+  if(r.valor<0||isNaN(r.valor))return "El valor no puede ser negativo.";
+  if(r.tipo==="Costo"&&!(r.valor>0))return "Un costo debe tener un valor mayor que cero.";
+  return "";
+}
+
+function guardar(){
+  var r={tipo:$("tipo").value,cult:$("cult").value,lote:$("lote").value,fecha:$("fecha").value,cant:parseFloat($("cant").value),valor:parseFloat($("valor").value||"0"),nota:$("nota").value.trim()};
+  var e=validar(r);$("err").textContent=e;if(e)return;
+  r.lote=r.lote.trim();r.id="r"+Date.now().toString(36)+Math.floor(Math.random()*999);r.ts=Date.now();r.estado="pendiente";
+  r.key=[r.tipo,r.cult,r.lote.toLowerCase(),r.fecha].join("|");
+  db.local.unshift(r);db.queue.push(r.id);
+  log("Guardado en el dispositivo: "+r.tipo+" · "+r.cult+" ("+r.lote+")");save();
+  $("lote").value="";$("cant").value="";$("valor").value="";$("nota").value="";
+  toast(online?"Guardado. Sincronizando…":"Guardado sin conexión. Queda en cola.");
+  render();if(online)setTimeout(sync,500);
+}
+
+// Controlador de sincronización (cola FIFO)
+async function sync(){
+  if(syncing)return;
+  if(!online){toast("Sin conexión: los cambios siguen en cola.");return}
+  if(!db.queue.length){toast("No hay cambios pendientes.");return}
+  syncing=true;$("sync").disabled=true;log("Conexión disponible. Iniciando sincronización de "+db.queue.length+" cambio(s).");
+  while(db.queue.length&&online){
+    var id=db.queue[0],r=db.local.filter(function(x){return x.id===id})[0];
+    await sleep(450);
+    if(!online)break;
+    if(r){
+      var s=db.server.filter(function(x){return x.key===r.key})[0];
+      if(s){
+        if(r.ts>=s.ts){Object.keys(r).forEach(function(k){s[k]=r[k]});log("Conflicto en "+r.tipo+"/"+r.cult+": se conserva la versión más reciente (la local).")}
+        else log("Conflicto en "+r.tipo+"/"+r.cult+": se conserva la versión del servidor.");
+      }else{var c=JSON.parse(JSON.stringify(r));db.server.unshift(c);log("Enviado al servidor: "+r.tipo+" · "+r.cult+" ("+r.lote+")")}
+      r.estado="sincronizado";
+    }
+    db.queue.shift();save();render();
+  }
+  if(!db.queue.length)log("Sincronización completa.");else log("Sincronización interrumpida: se perdió la conexión.");
+  save();syncing=false;render();
+}
+
+function setOnline(v){
+  online=v;var c=$("chip");c.className="chip"+(v?"":" off");
+  $("chipTx").textContent=v?"En línea (WiFi/4G)":"Sin conexión";
+  $("tog").textContent=v?"Simular sin señal":"Recuperar señal";
+  log(v?"Detector: conectividad ON":"Detector: conectividad OFF");
+  toast(v?"Conexión restablecida":"Modo sin conexión");
+  render();if(v&&db.queue.length)setTimeout(sync,600);
+}
+
+function bars(el,map,fmt){
+  var k=Object.keys(map),mx=Math.max.apply(null,k.map(function(x){return map[x]}).concat([1]));
+  el.innerHTML=k.length?k.map(function(x){return '<div style="display:flex;justify-content:space-between"><span>'+esc(x)+'</span><b>'+fmt(map[x])+'</b></div><div class="bw"><i style="width:'+(map[x]/mx*100)+'%"></i></div>'}).join(""):'<span class="mut">Aún no hay datos.</span>';
+}
+
+function render(){
+  var L=db.local;$("cnt").textContent="("+L.length+")";
+  $("lista").innerHTML=L.length?L.map(function(r){return '<div class="item"><span><b>'+esc(r.tipo)+' · '+esc(r.cult)+'</b><br><span class="mut">'+esc(r.lote)+' · '+esc(r.fecha)+' · '+r.cant+' · '+cop(r.valor)+(r.nota?'<br>'+esc(r.nota):'')+'</span></span><span class="tag'+(r.estado==="pendiente"?' w':'')+'">'+(r.estado==="pendiente"?"Pendiente":"Sincronizado")+'</span></div>'}).join(""):'<p class="mut">Todavía no has registrado actividades.</p>';
+  $("nq").textContent=db.queue.length?"("+db.queue.length+")":"";
+  $("cola").innerHTML=db.queue.length?db.queue.map(function(id,i){var r=L.filter(function(x){return x.id===id})[0];return r?'<div class="item"><span><b>'+(i+1)+'. '+esc(r.tipo)+' · '+esc(r.cult)+'</b><br><span class="mut">'+esc(r.lote)+' · '+esc(r.fecha)+'</span></span><span class="tag w">En espera</span></div>':""}).join(""):'<p class="mut">Cola vacía: todo está sincronizado.</p>';
+  $("sync").disabled=syncing||!db.queue.length;
+  $("log").innerHTML=db.log.length?db.log.map(esc).join("<br>"):'<span class="mut">Sin eventos todavía.</span>';
+  $("srv").innerHTML=db.server.length?db.server.map(function(r){return '<div class="item"><span><b>'+esc(r.tipo)+' · '+esc(r.cult)+'</b><br><span class="mut">'+esc(r.lote)+' · '+esc(r.fecha)+' · '+cop(r.valor)+'</span></span><span class="tag">En servidor</span></div>'}).join(""):'<p class="mut">El servidor aún no ha recibido registros.</p>';
+  var cost=0,cos=0,sie=0,ins=0,pc={},pp={};
+  L.forEach(function(r){
+    if(r.tipo==="Cosecha"){cos+=r.cant;pp[r.cult]=(pp[r.cult]||0)+r.cant}
+    if(r.tipo==="Siembra")sie+=r.cant;
+    if(r.tipo==="Insumo"||r.tipo==="Costo"){cost+=r.valor;pc[r.cult]=(pc[r.cult]||0)+r.valor}
+    if(r.tipo==="Insumo")ins++;
+  });
+  $("kpi").innerHTML=[["Costos totales",cop(cost)],["Cosecha (kg)",Math.round(cos).toLocaleString("es-CO")],["Área sembrada (ha)",sie],["Registros",L.length+" ("+db.queue.length+" pend.)"]].map(function(k){return '<div class="card"><span class="mut">'+k[0]+'</span><b>'+k[1]+'</b></div>'}).join("");
+  bars($("bars"),pc,cop);bars($("bars2"),pp,function(n){return Math.round(n).toLocaleString("es-CO")+" kg"});
+}
+
+function tab(t){
+  ["reg","cola","srv","ind","arq"].forEach(function(x){$("t-"+x).hidden=x!==t});
+  Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(b){b.className=b.dataset.t===t?"on":""});
+  window.scrollTo(0,0);
+}
+
+function demo(){
+  var d=hoy(),base=[["Siembra","Arroz","Lote 1",12,0],["Insumo","Arroz","Lote 1",300,1250000],["Costo","Maíz","Lote 2",1,480000],["Cosecha","Plátano","Lote 4",2200,0]];
+  base.forEach(function(b,i){var r={tipo:b[0],cult:b[1],lote:b[2],fecha:d,cant:b[3],valor:b[4],nota:"Dato de ejemplo",id:"d"+Date.now().toString(36)+i,ts:Date.now()+i,estado:"pendiente"};r.key=[r.tipo,r.cult,r.lote.toLowerCase(),r.fecha].join("|");db.local.unshift(r);db.queue.push(r.id)});
+  log("Se cargaron 4 registros de ejemplo.");save();render();toast("Ejemplos cargados");if(online)setTimeout(sync,500);
+}
+
+load();$("fecha").value=hoy();$("fecha").max=hoy();
+$("tipo").onchange=function(){$("lq").textContent=UN[this.value]};
+$("guardar").onclick=guardar;$("sync").onclick=sync;
+$("tog").onclick=function(){setOnline(!online)};
+$("demo").onclick=demo;
+$("reset").onclick=function(){if(confirm("¿Borrar todos los datos del prototipo?")){db={local:[],queue:[],server:[],log:[]};save();render();toast("Datos borrados")}};
+Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(b){b.onclick=function(){tab(b.dataset.t)}});
+window.addEventListener("offline",function(){if(online)setOnline(false)});
+render();
+})();
+</script>
+</body>
+</html>
